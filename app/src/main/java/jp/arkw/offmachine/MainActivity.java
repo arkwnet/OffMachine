@@ -173,11 +173,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void openCamera() {
         CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
-            id = manager.getCameraIdList()[0];
+            String frontCameraId = null;
+            for (String cameraId : manager.getCameraIdList()) {
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+                Integer lensFacing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (lensFacing != null && lensFacing == CameraCharacteristics.LENS_FACING_FRONT) {
+                    frontCameraId = cameraId;
+                    break;
+                }
+            }
+            if (frontCameraId == null) {
+                id = manager.getCameraIdList()[0];
+            } else {
+                id = frontCameraId;
+            }
             CameraCharacteristics cameraCharacteristics = manager.getCameraCharacteristics(id);
             StreamConfigurationMap streamConfigurationMap = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            assert streamConfigurationMap != null;
-            size = streamConfigurationMap.getOutputSizes(SurfaceTexture.class)[0];
+            if (streamConfigurationMap != null) {
+                size = streamConfigurationMap.getOutputSizes(SurfaceTexture.class)[0];
+            }
             if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CAMERA_PERMISSION);
                 return;
